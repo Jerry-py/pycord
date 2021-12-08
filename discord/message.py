@@ -1274,19 +1274,12 @@ class Message(Hashable):
 
         payload: Dict[str, Any] = {}
         if content is not MISSING:
-            if content is not None:
-                payload['content'] = str(content)
-            else:
-                payload['content'] = None
-
+            payload['content'] = str(content) if content is not None else None
         if embed is not MISSING and embeds is not MISSING:
             raise InvalidArgument('cannot pass both embed and embeds parameter to edit()')
 
         if embed is not MISSING:
-            if embed is None:
-                payload['embeds'] = []
-            else:
-                payload['embeds'] = [embed.to_dict()]
+            payload['embeds'] = [] if embed is None else [embed.to_dict()]
         elif embeds is not MISSING:
             payload['embeds'] = [e.to_dict() for e in embeds]
 
@@ -1298,23 +1291,18 @@ class Message(Hashable):
         if allowed_mentions is MISSING:
             if self._state.allowed_mentions is not None and self.author.id == self._state.self_id:
                 payload['allowed_mentions'] = self._state.allowed_mentions.to_dict()
-        else:
-            if allowed_mentions is not None:
-                if self._state.allowed_mentions is not None:
-                    payload['allowed_mentions'] = self._state.allowed_mentions.merge(allowed_mentions).to_dict()
-                else:
-                    payload['allowed_mentions'] = allowed_mentions.to_dict()
+        elif allowed_mentions is not None:
+            if self._state.allowed_mentions is not None:
+                payload['allowed_mentions'] = self._state.allowed_mentions.merge(allowed_mentions).to_dict()
+            else:
+                payload['allowed_mentions'] = allowed_mentions.to_dict()
 
         if attachments is not MISSING:
             payload['attachments'] = [a.to_dict() for a in attachments]
 
         if view is not MISSING:
             self._state.prevent_view_updates_for(self.id)
-            if view:
-                payload['components'] = view.to_components()
-            else:
-                payload['components'] = []
-                
+            payload['components'] = view.to_components() if view else []
         if file is not MISSING and files is not MISSING:
             raise InvalidArgument('cannot pass both file and files parameter to edit()')
 
@@ -1873,11 +1861,7 @@ class PartialMessage(Hashable):
             view = None
         else:
             self._state.prevent_view_updates_for(self.id)
-            if view:
-                fields['components'] = view.to_components()
-            else:
-                fields['components'] = []
-
+            fields['components'] = view.to_components() if view else []
         if fields:
             data = await self._state.http.edit_message(self.channel.id, self.id, **fields)
 

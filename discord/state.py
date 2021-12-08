@@ -181,27 +181,22 @@ class ConnectionState:
         self.allowed_mentions: Optional[AllowedMentions] = allowed_mentions
         self._chunk_requests: Dict[Union[int, str], ChunkRequest] = {}
 
-        activity = options.get('activity', None)
+        activity = options.get('activity')
         if activity:
             if not isinstance(activity, BaseActivity):
                 raise TypeError('activity parameter must derive from BaseActivity.')
 
             activity = activity.to_dict()
 
-        status = options.get('status', None)
+        status = options.get('status')
         if status:
-            if status is Status.offline:
-                status = 'invisible'
-            else:
-                status = str(status)
-
-        intents = options.get('intents', None)
-        if intents is not None:
-            if not isinstance(intents, Intents):
-                raise TypeError(f'intents parameter must be Intent not {type(intents)!r}')
-        else:
+            status = 'invisible' if status is Status.offline else str(status)
+        intents = options.get('intents')
+        if intents is None:
             intents = Intents.default()
 
+        elif not isinstance(intents, Intents):
+            raise TypeError(f'intents parameter must be Intent not {type(intents)!r}')
         if not intents.guilds:
             _log.warning('Guilds intent seems to be disabled. This may cause state related issues.')
 
@@ -211,13 +206,13 @@ class ConnectionState:
         if not intents.members and self._chunk_guilds:
             raise ValueError('Intents.members must be enabled to chunk guilds at startup.')
 
-        cache_flags = options.get('member_cache_flags', None)
+        cache_flags = options.get('member_cache_flags')
         if cache_flags is None:
             cache_flags = MemberCacheFlags.from_intents(intents)
-        else:
-            if not isinstance(cache_flags, MemberCacheFlags):
-                raise TypeError(f'member_cache_flags parameter must be MemberCacheFlags not {type(cache_flags)!r}')
+        elif not isinstance(cache_flags, MemberCacheFlags):
+            raise TypeError(f'member_cache_flags parameter must be MemberCacheFlags not {type(cache_flags)!r}')
 
+        else:
             cache_flags._verify_intents(intents)
 
         self.member_cache_flags: MemberCacheFlags = cache_flags
@@ -514,11 +509,10 @@ class ConnectionState:
                     if self._guild_needs_chunking(guild):
                         future = await self.chunk_guild(guild, wait=False)
                         states.append((guild, future))
+                    elif guild.unavailable is False:
+                        self.dispatch('guild_available', guild)
                     else:
-                        if guild.unavailable is False:
-                            self.dispatch('guild_available', guild)
-                        else:
-                            self.dispatch('guild_join', guild)
+                        self.dispatch('guild_join', guild)
 
             for guild, future in states:
                 try:

@@ -86,9 +86,9 @@ def permission(role_id: int = None, user_id: int = None, permission: bool = True
         permission may be tied to.
     """
     def decorator(func: Callable):
-        if not role_id is None:
+        if role_id is not None:
             app_cmd_perm = Permission(role_id, 1, permission, guild_id)
-        elif not user_id is None:
+        elif user_id is not None:
             app_cmd_perm = Permission(user_id, 2, permission, guild_id)
         else:
             raise ValueError("role_id or user_id must be specified!")

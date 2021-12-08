@@ -557,9 +557,8 @@ class HTTPClient:
         files: Sequence[File],
         **payload,
     ) -> Response[message.Message]:
-        form = []
+        form = [{'name': 'payload_json', 'value': utils._to_json(payload)}]
 
-        form.append({'name': 'payload_json', 'value': utils._to_json(payload)})
         if len(files) == 1:
             file = files[0]
             form.append(

@@ -23,6 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
+
 from __future__ import annotations
 
 import asyncio
@@ -60,9 +61,6 @@ __all__ = (
     "UserCommand",
     "MessageCommand",
 )
-
-if TYPE_CHECKING:
-    pass
 
 def wrap_callback(coro):
     @functools.wraps(coro)
@@ -648,10 +646,13 @@ class Option:
 
         self.min_value: minmax_typehint = kwargs.pop("min_value", None)
         self.max_value: minmax_typehint = kwargs.pop("max_value", None)
-        
+
         if not (isinstance(self.min_value, minmax_types) or self.min_value is None):
             raise TypeError(f"Expected {minmax_typehint} for min_value, got \"{type(self.min_value).__name__}\"")
-        if not (isinstance(self.max_value, minmax_types) or self.min_value is None):
+        if (
+            not isinstance(self.max_value, minmax_types)
+            and self.min_value is not None
+        ):
             raise TypeError(f"Expected {minmax_typehint} for max_value, got \"{type(self.max_value).__name__}\"")
 
         self.autocomplete = kwargs.pop("autocomplete", None)
@@ -1146,7 +1147,7 @@ def validate_chat_input_name(name: Any):
         raise ValidationError(
             f"Chat input command names and options must be 1-32 characters long. Received {name}"
         )
-    if not name.lower() == name:  # Can't use islower() as it fails if none of the chars can be lower. See #512.
+    if name.lower() != name:  # Can't use islower() as it fails if none of the chars can be lower. See #512.
         raise ValidationError(f"Chat input command names and options must be lowercase. Received {name}")
 
 

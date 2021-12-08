@@ -228,12 +228,7 @@ class Cog(metaclass=CogMeta):
     __cog_listeners__: ClassVar[List[Tuple[str, str]]]
 
     def __new__(cls: Type[CogT], *args: Any, **kwargs: Any) -> CogT:
-        # For issue 426, we need to store a copy of the command objects
-        # since we modify them to inject `self` to them.
-        # To do this, we need to interfere with the Cog creation process.
-        self = super().__new__(cls)
-
-        return self
+        return super().__new__(cls)
 
     def get_commands(self) -> List[ApplicationCommand]:
         r"""
@@ -443,22 +438,21 @@ class Cog(metaclass=CogMeta):
         # is essentially just the command loading, which raises if there are
         # duplicates. When this condition is met, we want to undo all what
         # we've added so far for some form of atomic loading.
-        
+
         for index, command in enumerate(self.__cog_commands__):
             command.cog = self
-            if not isinstance(command, ApplicationCommand):
-                if command.parent is None:
-                    try:
-                        bot.add_command(command)
-                    except Exception as e:
-                        # undo our additions
-                        for to_undo in self.__cog_commands__[:index]:
-                            if to_undo.parent is None:
-                                bot.remove_command(to_undo.name)
-                        raise e
-            else:
+            if isinstance(command, ApplicationCommand):
                 bot.add_application_command(command)
 
+            elif command.parent is None:
+                try:
+                    bot.add_command(command)
+                except Exception as e:
+                    # undo our additions
+                    for to_undo in self.__cog_commands__[:index]:
+                        if to_undo.parent is None:
+                            bot.remove_command(to_undo.name)
+                    raise e
         # check if we're overriding the default
         if cls.bot_check is not Cog.bot_check:
             bot.add_check(self.bot_check)
@@ -482,9 +476,8 @@ class Cog(metaclass=CogMeta):
             for command in self.__cog_commands__:
                 if isinstance(command, ApplicationCommand):
                     bot.remove_application_command(command)
-                else:
-                    if command.parent is None:
-                        bot.remove_command(command.name)
+                elif command.parent is None:
+                    bot.remove_command(command.name)
 
             for _, method_name in self.__cog_listeners__:
                 bot.remove_listener(getattr(self, method_name))
@@ -624,10 +617,12 @@ class CogMixin:
 
         # remove all the listeners from the module
         for event_list in self.extra_events.copy().values():
-            remove = []
-            for index, event in enumerate(event_list):
-                if event.__module__ is not None and _is_submodule(name, event.__module__):
-                    remove.append(index)
+            remove = [
+                index
+                for index, event in enumerate(event_list)
+                if event.__module__ is not None
+                and _is_submodule(name, event.__module__)
+            ]
 
             for index in reversed(remove):
                 del event_list[index]

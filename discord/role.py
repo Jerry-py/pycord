@@ -439,11 +439,7 @@ class Role(Hashable):
             colour = color
 
         if colour is not MISSING:
-            if isinstance(colour, int):
-                payload['color'] = colour
-            else:
-                payload['color'] = colour.value
-
+            payload['color'] = colour if isinstance(colour, int) else colour.value
         if name is not MISSING:
             payload['name'] = name
 
@@ -457,11 +453,7 @@ class Role(Hashable):
             payload['mentionable'] = mentionable
 
         if icon is not MISSING:
-            if icon is None:
-                payload['icon'] = None
-            else:
-                payload['icon'] = _bytes_to_base64_data(icon)
-        
+            payload['icon'] = None if icon is None else _bytes_to_base64_data(icon)
         if unicode_emoji is not MISSING:
             payload['unicode_emoji'] = unicode_emoji
             payload['icon'] = None

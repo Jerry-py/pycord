@@ -492,23 +492,11 @@ def handle_message_parameters(
         payload['embeds'] = [e.to_dict() for e in embeds]
 
     if embed is not MISSING:
-        if embed is None:
-            payload['embeds'] = []
-        else:
-            payload['embeds'] = [embed.to_dict()]
-
+        payload['embeds'] = [] if embed is None else [embed.to_dict()]
     if content is not MISSING:
-        if content is not None:
-            payload['content'] = str(content)
-        else:
-            payload['content'] = None
-
+        payload['content'] = str(content) if content is not None else None
     if view is not MISSING:
-        if view is not None:
-            payload['components'] = view.to_components()
-        else:
-            payload['components'] = []
-
+        payload['components'] = view.to_components() if view is not None else []
     payload['tts'] = tts
     if avatar_url:
         payload['avatar_url'] = str(avatar_url)
@@ -632,10 +620,7 @@ class _WebhookState:
         self._webhook: Any = webhook
 
         self._parent: Optional[ConnectionState]
-        if isinstance(parent, _WebhookState):
-            self._parent = None
-        else:
-            self._parent = parent
+        self._parent = None if isinstance(parent, _WebhookState) else parent
 
     def _get_guild(self, guild_id):
         if self._parent is not None:
