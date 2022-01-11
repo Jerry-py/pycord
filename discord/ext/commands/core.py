@@ -54,7 +54,13 @@ from .errors import *
 from ...errors import *
 from .cooldowns import Cooldown, BucketType, CooldownMapping, MaxConcurrency, DynamicCooldownMapping
 from .converter import run_converters, get_converter, Greedy
-from ...commands import _BaseCommand, slash_command, user_command, message_command
+from ...commands import (
+    ApplicationCommand,
+    _BaseCommand,
+    slash_command,
+    user_command,
+    message_command,
+)
 from .cog import Cog
 from .context import Context
 
@@ -1141,6 +1147,9 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
         finally:
             ctx.command = original
 
+    def _set_cog(self, cog):
+        self.cog = cog
+
 class GroupMixin(Generic[CogT]):
     """A mixin that implements common functionality for classes that behave
     similar to :class:`.Group` and are allowed to register commands.
@@ -2141,7 +2150,7 @@ def is_nsfw() -> Callable[[T], T]:
     return check(pred)
 
 def cooldown(rate: int, per: float, type: Union[BucketType, Callable[[Message], Any]] = BucketType.default) -> Callable[[T], T]:
-    """A decorator that adds a cooldown to a :class:`.Command`
+    """A decorator that adds a cooldown to a command
 
     A cooldown allows a command to only be used a specific amount
     of times in a specific time frame. These cooldowns can be based
@@ -2168,7 +2177,7 @@ def cooldown(rate: int, per: float, type: Union[BucketType, Callable[[Message], 
     """
 
     def decorator(func: Union[Command, CoroFunc]) -> Union[Command, CoroFunc]:
-        if isinstance(func, Command):
+        if isinstance(func, (Command, ApplicationCommand)):
             func._buckets = CooldownMapping(Cooldown(rate, per), type)
         else:
             func.__commands_cooldown__ = CooldownMapping(Cooldown(rate, per), type)
@@ -2176,7 +2185,7 @@ def cooldown(rate: int, per: float, type: Union[BucketType, Callable[[Message], 
     return decorator  # type: ignore
 
 def dynamic_cooldown(cooldown: Union[BucketType, Callable[[Message], Any]], type: BucketType = BucketType.default) -> Callable[[T], T]:
-    """A decorator that adds a dynamic cooldown to a :class:`.Command`
+    """A decorator that adds a dynamic cooldown to a command
 
     This differs from :func:`.cooldown` in that it takes a function that
     accepts a single parameter of type :class:`.discord.Message` and must
@@ -2216,7 +2225,7 @@ def dynamic_cooldown(cooldown: Union[BucketType, Callable[[Message], Any]], type
     return decorator  # type: ignore
 
 def max_concurrency(number: int, per: BucketType = BucketType.default, *, wait: bool = False) -> Callable[[T], T]:
-    """A decorator that adds a maximum concurrency to a :class:`.Command` or its subclasses.
+    """A decorator that adds a maximum concurrency to a command
 
     This enables you to only allow a certain number of command invocations at the same time,
     for example if a command takes too long or if only one user can use it at a time. This
@@ -2241,7 +2250,7 @@ def max_concurrency(number: int, per: BucketType = BucketType.default, *, wait: 
 
     def decorator(func: Union[Command, CoroFunc]) -> Union[Command, CoroFunc]:
         value = MaxConcurrency(number, per=per, wait=wait)
-        if isinstance(func, Command):
+        if isinstance(func, (Command, ApplicationCommand)):
             func._max_concurrency = value
         else:
             func.__commands_max_concurrency__ = value

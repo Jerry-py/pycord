@@ -120,7 +120,7 @@ class _DefaultRepr:
 
 _default = _DefaultRepr()
 
-class BotBase(GroupMixin):
+class BotBase(GroupMixin, discord.cog.CogMixin):
     _supports_prefixed_commands = True
     def __init__(self, command_prefix=when_mentioned, help_command=_default, **options):
         super().__init__(**options)
@@ -173,116 +173,6 @@ class BotBase(GroupMixin):
         print(f'Ignoring exception in command {context.command}:', file=sys.stderr)
         traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
 
-    # global check registration
-
-    def check(self, func: T) -> T:
-        r"""A decorator that adds a global check to the bot.
-
-        A global check is similar to a :func:`.check` that is applied
-        on a per command basis except it is run before any command checks
-        have been verified and applies to every command the bot has.
-
-        .. note::
-
-            This function can either be a regular function or a coroutine.
-
-        Similar to a command :func:`.check`\, this takes a single parameter
-        of type :class:`.Context` and can only raise exceptions inherited from
-        :exc:`.CommandError`.
-
-        Example
-        ---------
-
-        .. code-block:: python3
-
-            @bot.check
-            def check_commands(ctx):
-                return ctx.command.qualified_name in allowed_commands
-
-        """
-        # T was used instead of Check to ensure the type matches on return
-        self.add_check(func)  # type: ignore
-        return func
-
-    def add_check(self, func: Check, *, call_once: bool = False) -> None:
-        """Adds a global check to the bot.
-
-        This is the non-decorator interface to :meth:`.check`
-        and :meth:`.check_once`.
-
-        Parameters
-        -----------
-        func
-            The function that was used as a global check.
-        call_once: :class:`bool`
-            If the function should only be called once per
-            :meth:`.invoke` call.
-        """
-
-        if call_once:
-            self._check_once.append(func)
-        else:
-            self._checks.append(func)
-
-    def remove_check(self, func: Check, *, call_once: bool = False) -> None:
-        """Removes a global check from the bot.
-
-        This function is idempotent and will not raise an exception
-        if the function is not in the global checks.
-
-        Parameters
-        -----------
-        func
-            The function to remove from the global checks.
-        call_once: :class:`bool`
-            If the function was added with ``call_once=True`` in
-            the :meth:`.Bot.add_check` call or using :meth:`.check_once`.
-        """
-        l = self._check_once if call_once else self._checks
-
-        try:
-            l.remove(func)
-        except ValueError:
-            pass
-
-    def check_once(self, func: CFT) -> CFT:
-        r"""A decorator that adds a "call once" global check to the bot.
-
-        Unlike regular global checks, this one is called only once
-        per :meth:`.invoke` call.
-
-        Regular global checks are called whenever a command is called
-        or :meth:`.Command.can_run` is called. This type of check
-        bypasses that and ensures that it's called only once, even inside
-        the default help command.
-
-        .. note::
-
-            When using this function the :class:`.Context` sent to a group subcommand
-            may only parse the parent command and not the subcommands due to it
-            being invoked once per :meth:`.Bot.invoke` call.
-
-        .. note::
-
-            This function can either be a regular function or a coroutine.
-
-        Similar to a command :func:`.check`\, this takes a single parameter
-        of type :class:`.Context` and can only raise exceptions inherited from
-        :exc:`.CommandError`.
-
-        Example
-        ---------
-
-        .. code-block:: python3
-
-            @bot.check_once
-            def whitelist(ctx):
-                return ctx.message.author.id in my_whitelist
-
-        """
-        self.add_check(func, call_once=True)
-        return func
-
     async def can_run(self, ctx: Context, *, call_once: bool = False) -> bool:
         data = self._check_once if call_once else self._checks
 
@@ -291,7 +181,7 @@ class BotBase(GroupMixin):
 
         # type-checker doesn't distinguish between functions and methods
         return await discord.utils.async_all(f(ctx) for f in data)  # type: ignore
-
+    
     async def is_owner(self, user: discord.User) -> bool:
         """|coro|
 

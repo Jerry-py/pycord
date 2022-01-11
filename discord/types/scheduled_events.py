@@ -1,7 +1,6 @@
 """
 The MIT License (MIT)
 
-Copyright (c) 2015-2021 Rapptz
 Copyright (c) 2021-present Pycord Development
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -23,43 +22,42 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import TypedDict
-from .snowflake import SnowflakeList
+from __future__ import annotations
+
+from typing import TypedDict, Optional, Literal, Union
+from datetime import datetime
+
+from .guild import Guild
 from .user import User
+from .snowflake import Snowflake
+from .channel import StageChannel, VoiceChannel
+from .user import User
+from .member import Member
 
 
-class Nickname(TypedDict):
-    nick: str
+ScheduledEventStatus = Literal[1, 2, 3, 4]
+ScheduledEventLocationType = Literal[1, 2, 3]
+ScheduledEventPrivacyLevel = Literal[2]
 
 
-class PartialMember(TypedDict):
-    roles: SnowflakeList
-    joined_at: str
-    deaf: str
-    mute: str
+class ScheduledEventLocation(TypedDict):
+    value: Union[StageChannel, VoiceChannel, str]
+    type: ScheduledEventLocationType
 
 
-class Member(PartialMember, total=False):
-    avatar: str
-    user: User
-    nick: str
-    premium_since: str
-    pending: bool
-    permissions: str
-    communication_disabled_until: str
+class ScheduledEvent(TypedDict):
+    id: Snowflake
+    guild: Guild
+    name: str
+    description: str
+    #image: Optional[str]
+    start_time: datetime
+    end_time: Optional[datetime]
+    status: ScheduledEventStatus
+    subscriber_count: Optional[int]
+    creator_id: Snowflake
+    creator: Optional[User]
+    location: ScheduledEventLocation
 
-
-class _OptionalMemberWithUser(PartialMember, total=False):
-    avatar: str
-    nick: str
-    premium_since: str
-    pending: bool
-    permissions: str
-
-
-class MemberWithUser(_OptionalMemberWithUser):
-    user: User
-
-
-class UserWithMember(User, total=False):
-    member: _OptionalMemberWithUser
+class ScheduledEventSubscriber(User):
+    member: Optional[Member]

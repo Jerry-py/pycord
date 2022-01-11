@@ -29,7 +29,7 @@ import sys
 import discord.utils
 import types
 from . import errors
-from .commands import SlashCommand, UserCommand, MessageCommand, ApplicationCommand
+from .commands import SlashCommand, UserCommand, MessageCommand, ApplicationCommand, SlashCommandGroup
 
 from typing import Any, Callable, Mapping, ClassVar, Dict, Generator, List, Optional, TYPE_CHECKING, Tuple, TypeVar, Type
 
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 __all__ = (
     'CogMeta',
     'Cog',
-    'CogMixin'
+    'CogMixin',
 )
 
 CogT = TypeVar('CogT', bound='Cog')
@@ -145,6 +145,13 @@ class CogMeta(type):
                 if elem in listeners:
                     del listeners[elem]
 
+                try:
+                    if getattr(value, "parent") is not None and isinstance(value, ApplicationCommand):
+                        # Skip commands if they are a part of a group
+                        continue
+                except AttributeError:
+                    pass
+
                 is_static_method = isinstance(value, staticmethod)
                 if is_static_method:
                     value = value.__func__
@@ -242,16 +249,7 @@ class Cog(metaclass=CogMeta):
 
                 This does not include subcommands.
         """
-        return [
-            c for c in (
-                c for c in self.__cog_commands__
-                if not isinstance(c, (SlashCommand, MessageCommand, UserCommand))
-            ) if c.parent is None
-        ] + [
-            c for c in self.__cog_commands__
-            if isinstance(c, (SlashCommand, MessageCommand, UserCommand))
-        ]
-
+        return [c for c in self.__cog_commands__ if isinstance(c, ApplicationCommand) and c.parent is None]
     @property
     def qualified_name(self) -> str:
         """:class:`str`: Returns the cog's specified name, not the class name."""
@@ -442,6 +440,19 @@ class Cog(metaclass=CogMeta):
         for index, command in enumerate(self.__cog_commands__):
             command.cog = self
             if isinstance(command, ApplicationCommand):
+                command._set_cog(self)
+
+            if not isinstance(command, ApplicationCommand):
+                if command.parent is None:
+                    try:
+                        bot.add_command(command)
+                    except Exception as e:
+                        # undo our additions
+                        for to_undo in self.__cog_commands__[:index]:
+                            if to_undo.parent is None:
+                                bot.remove_command(to_undo.name)
+                        raise e
+            else:
                 bot.add_application_command(command)
 
             elif command.parent is None:
