@@ -21,21 +21,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+
 from .core import Filters, Sink, default_filters
 
 
 class PCMSink(Sink):
-    """A Sink "stores" all the audio data.
-    
-    Used for .pcm files.
-    
-    .. versionadded:: 2.1
-    
-    Raises
-    ------
-    ClientException
-        An invalid encoding type was specified.
-        Audio may only be formatted after recording is finished.
+    """A special sink for .pcm files.
+
+    .. versionadded:: 2.0
     """
 
     def __init__(self, *, filters=None):
@@ -44,7 +37,7 @@ class PCMSink(Sink):
         self.filters = filters
         Filters.__init__(self, **self.filters)
 
-        self.encoding = "ogg"
+        self.encoding = "pcm"
         self.vc = None
         self.audio_data = {}
 

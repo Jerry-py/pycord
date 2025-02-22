@@ -25,19 +25,21 @@ DEALINGS IN THE SOFTWARE.
 
 from __future__ import annotations
 
-from typing import List, Literal, Optional, TypedDict
-from .user import PartialUser
+from typing import Literal
+
+from typing_extensions import NotRequired, TypedDict
+
 from .snowflake import Snowflake
+from .user import PartialUser
 
-
-StatusType = Literal['idle', 'dnd', 'online', 'offline']
+StatusType = Literal["idle", "dnd", "online", "offline"]
 
 
 class PartialPresenceUpdate(TypedDict):
     user: PartialUser
     guild_id: Snowflake
     status: StatusType
-    activities: List[Activity]
+    activities: list[Activity]
     client_status: ClientStatus
 
 
@@ -54,7 +56,7 @@ class ActivityTimestamps(TypedDict, total=False):
 
 class ActivityParty(TypedDict, total=False):
     id: str
-    size: List[int]
+    size: list[int]
 
 
 class ActivityAssets(TypedDict, total=False):
@@ -70,12 +72,9 @@ class ActivitySecrets(TypedDict, total=False):
     match: str
 
 
-class _ActivityEmojiOptional(TypedDict, total=False):
-    id: Snowflake
-    animated: bool
-
-
-class ActivityEmoji(_ActivityEmojiOptional):
+class ActivityEmoji(TypedDict):
+    id: NotRequired[Snowflake]
+    animated: NotRequired[bool]
     name: str
 
 
@@ -84,14 +83,11 @@ class ActivityButton(TypedDict):
     url: str
 
 
-class _SendableActivityOptional(TypedDict, total=False):
-    url: Optional[str]
-
-
 ActivityType = Literal[0, 1, 2, 4, 5]
 
 
-class SendableActivity(_SendableActivityOptional):
+class SendableActivity(TypedDict):
+    url: NotRequired[str | None]
     name: str
     type: ActivityType
 
@@ -101,15 +97,15 @@ class _BaseActivity(SendableActivity):
 
 
 class Activity(_BaseActivity, total=False):
-    state: Optional[str]
-    details: Optional[str]
+    state: str | None
+    details: str | None
     timestamps: ActivityTimestamps
     assets: ActivityAssets
     party: ActivityParty
     application_id: Snowflake
     flags: int
-    emoji: Optional[ActivityEmoji]
+    emoji: ActivityEmoji | None
     secrets: ActivitySecrets
-    session_id: Optional[str]
+    session_id: str | None
     instance: bool
-    buttons: List[ActivityButton]
+    buttons: list[str]

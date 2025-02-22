@@ -1,7 +1,7 @@
 .. _discord_ext_pages:
 
-``discord.ext.pages`` -- A pagination extension module
-======================================================
+discord.ext.pages
+=================
 
 .. versionadded:: 2.0
 
@@ -290,6 +290,14 @@ Example usage in a cog:
 
 API Reference
 -------------
+
+Page
+~~~~
+
+.. attributetable:: discord.ext.pages.Page
+
+.. autoclass:: discord.ext.pages.Page
+    :members:
 
 Paginator
 ~~~~~~~~~

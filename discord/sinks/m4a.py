@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+
 import io
 import os
 import subprocess
@@ -31,17 +32,9 @@ from .errors import M4ASinkError
 
 
 class M4ASink(Sink):
-    """A Sink "stores" all the audio data.
-    
-    Used for .m4a files.
-    
-    .. versionadded:: 2.1
-    
-    Raises
-    ------
-    ClientException
-        An invalid encoding type was specified.
-        Audio may only be formatted after recording is finished.
+    """A special sink for .m4a files.
+
+    .. versionadded:: 2.0
     """
 
     def __init__(self, *, filters=None):
@@ -55,6 +48,15 @@ class M4ASink(Sink):
         self.audio_data = {}
 
     def format_audio(self, audio):
+        """Formats the recorded audio.
+
+        Raises
+        ------
+        M4ASinkError
+            Audio may only be formatted after recording is finished.
+        M4ASinkError
+            Formatting the audio failed.
+        """
         if self.vc.recording:
             raise M4ASinkError(
                 "Audio may only be formatted after recording is finished."
@@ -66,6 +68,8 @@ class M4ASink(Sink):
             "s16le",
             "-ar",
             "48000",
+            "-loglevel",
+            "error",
             "-ac",
             "2",
             "-i",
@@ -77,10 +81,11 @@ class M4ASink(Sink):
         if os.path.exists(m4a_file):
             os.remove(
                 m4a_file
-            )  # process will get stuck asking whether or not to overwrite, if file already exists.
+            )  # process will get stuck asking whether to overwrite, if file already exists.
         try:
-            process = subprocess.Popen(args, creationflags=CREATE_NO_WINDOW,
-                                       stdin=subprocess.PIPE)
+            process = subprocess.Popen(
+                args, creationflags=CREATE_NO_WINDOW, stdin=subprocess.PIPE
+            )
         except FileNotFoundError:
             raise M4ASinkError("ffmpeg was not found.") from None
         except subprocess.SubprocessError as exc:
