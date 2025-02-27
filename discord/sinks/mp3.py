@@ -21,33 +21,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+
 import io
-import os
 import subprocess
-import threading
-from typing import Optional, IO
 
 from .core import CREATE_NO_WINDOW, Filters, Sink, default_filters
 from .errors import MP3SinkError
 
 
 class MP3Sink(Sink):
-    """A Sink "stores" all the audio data.
-    
-    Used for .mp3 files.
-    
-    .. versionadded:: 2.1
-    
-    Parameters
-    ----------
-    output_path: :class:`string`
-        A path to where the audio files should be output.
-    
-    Raises
-    ------
-    ClientException
-        An invalid encoding type was specified.
-        Audio may only be formatted after recording is finished.
+    """A special sink for .mp3 files.
+
+    .. versionadded:: 2.0
     """
 
     def __init__(self, *, filters=None):
@@ -61,6 +46,15 @@ class MP3Sink(Sink):
         self.audio_data = {}
 
     def format_audio(self, audio):
+        """Formats the recorded audio.
+
+        Raises
+        ------
+        MP3SinkError
+            Audio may only be formatted after recording is finished.
+        MP3SinkError
+            Formatting the audio failed.
+        """
         if self.vc.recording:
             raise MP3SinkError(
                 "Audio may only be formatted after recording is finished."
@@ -71,17 +65,23 @@ class MP3Sink(Sink):
             "s16le",
             "-ar",
             "48000",
+            "-loglevel",
+            "error",
             "-ac",
             "2",
             "-i",
             "-",
             "-f",
             "mp3",
-            "pipe:1"
+            "pipe:1",
         ]
         try:
-            process = subprocess.Popen(args, creationflags=CREATE_NO_WINDOW,
-                                       stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+            process = subprocess.Popen(
+                args,
+                creationflags=CREATE_NO_WINDOW,
+                stdout=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+            )
         except FileNotFoundError:
             raise MP3SinkError("ffmpeg was not found.") from None
         except subprocess.SubprocessError as exc:

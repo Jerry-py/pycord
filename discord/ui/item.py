@@ -25,21 +25,19 @@ DEALINGS IN THE SOFTWARE.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Coroutine, Dict, Generic, Optional, TYPE_CHECKING, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Generic, TypeVar
 
 from ..interactions import Interaction
 
-__all__ = (
-    'Item',
-)
+__all__ = ("Item",)
 
 if TYPE_CHECKING:
+    from ..components import Component
     from ..enums import ComponentType
     from .view import View
-    from ..components import Component
 
-I = TypeVar('I', bound='Item')
-V = TypeVar('V', bound='View', covariant=True)
+I = TypeVar("I", bound="Item")
+V = TypeVar("V", bound="View", covariant=True)
 ItemCallbackType = Callable[[Any, I, Interaction], Coroutine[Any, Any, Any]]
 
 
@@ -54,12 +52,12 @@ class Item(Generic[V]):
     .. versionadded:: 2.0
     """
 
-    __item_repr_attributes__: Tuple[str, ...] = ('row',)
+    __item_repr_attributes__: tuple[str, ...] = ("row",)
 
     def __init__(self):
-        self._view: Optional[V] = None
-        self._row: Optional[int] = None
-        self._rendered_row: Optional[int] = None
+        self._view: V | None = None
+        self._row: int | None = None
+        self._rendered_row: int | None = None
         # This works mostly well but there is a gotcha with
         # the interaction with from_component, since that technically provides
         # a custom_id most dispatchable items would get this set to True even though
@@ -68,7 +66,7 @@ class Item(Generic[V]):
         # only called upon edit and we're mainly interested during initial creation time.
         self._provided_custom_id: bool = False
 
-    def to_component_dict(self) -> Dict[str, Any]:
+    def to_component_dict(self) -> dict[str, Any]:
         raise NotImplementedError
 
     def refresh_component(self, component: Component) -> None:
@@ -78,7 +76,7 @@ class Item(Generic[V]):
         return None
 
     @classmethod
-    def from_component(cls: Type[I], component: Component) -> I:
+    def from_component(cls: type[I], component: Component) -> I:
         return cls()
 
     @property
@@ -92,29 +90,65 @@ class Item(Generic[V]):
         return self._provided_custom_id
 
     def __repr__(self) -> str:
-        attrs = ' '.join(f'{key}={getattr(self, key)!r}' for key in self.__item_repr_attributes__)
-        return f'<{self.__class__.__name__} {attrs}>'
+        attrs = " ".join(
+            f"{key}={getattr(self, key)!r}" for key in self.__item_repr_attributes__
+        )
+        return f"<{self.__class__.__name__} {attrs}>"
 
     @property
-    def row(self) -> Optional[int]:
+    def row(self) -> int | None:
+        """Gets or sets the row position of this item within its parent view.
+
+        The row position determines the vertical placement of the item in the UI.
+        The value must be an integer between 0 and 4 (inclusive), or ``None`` to indicate
+        that no specific row is set.
+
+        Returns
+        -------
+        Optional[:class:`int`]
+            The row position of the item, or ``None`` if not explicitly set.
+
+        Raises
+        ------
+        ValueError
+            If the row value is not ``None`` and is outside the range [0, 4].
+        """
         return self._row
 
     @row.setter
-    def row(self, value: Optional[int]):
+    def row(self, value: int | None):
         if value is None:
             self._row = None
         elif 5 > value >= 0:
             self._row = value
         else:
-            raise ValueError('row cannot be negative or greater than or equal to 5')
+            raise ValueError("row cannot be negative or greater than or equal to 5")
 
     @property
     def width(self) -> int:
+        """Gets the width of the item in the UI layout.
+
+        The width determines how much horizontal space this item occupies within its row.
+
+        Returns
+        -------
+        :class:`int`
+            The width of the item. Defaults to 1.
+        """
         return 1
 
     @property
-    def view(self) -> Optional[V]:
-        """Optional[:class:`View`]: The underlying view for this item."""
+    def view(self) -> V | None:
+        """Gets the parent view associated with this item.
+
+        The view refers to the container that holds this item. This is typically set
+        automatically when the item is added to a view.
+
+        Returns
+        -------
+        Optional[:class:`View`]
+            The parent view of this item, or ``None`` if the item is not attached to any view.
+        """
         return self._view
 
     async def callback(self, interaction: Interaction):
@@ -125,8 +159,7 @@ class Item(Generic[V]):
         This can be overridden by subclasses.
 
         Parameters
-        -----------
+        ----------
         interaction: :class:`.Interaction`
             The interaction that triggered this UI item.
         """
-        pass

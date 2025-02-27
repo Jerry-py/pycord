@@ -5,16 +5,16 @@
 .. _intents_primer:
 
 A Primer to Gateway Intents
-=============================
+===========================
 
 In version 1.5 comes the introduction of :class:`Intents`. This is a radical change in how bots are written. An intent basically allows a bot to subscribe to specific buckets of events. The events that correspond to each intent is documented in the individual attribute of the :class:`Intents` documentation.
 
 These intents are passed to the constructor of :class:`Client` or its subclasses (:class:`AutoShardedClient`, :class:`~.AutoShardedBot`, :class:`~.Bot`) with the ``intents`` argument.
 
-If intents are not passed, then the library defaults to every intent being enabled except the privileged intents, currently :attr:`Intents.members`, :attr:`Intents.presences`, and :attr:`Intents.guild_messages`.
+If intents are not passed, then the library defaults to every intent being enabled except the privileged intents, currently :attr:`Intents.members`, :attr:`Intents.presences`, and :attr:`Intents.message_content`.
 
 What intents are needed?
---------------------------
+------------------------
 
 The intents that are necessary for your bot can only be dictated by yourself. Each attribute in the :class:`Intents` class documents what :ref:`events <discord-api-events>` it corresponds to and what kind of cache it enables.
 
@@ -34,7 +34,7 @@ For example, if you want a bot that functions without spammy events like presenc
     # from discord.ext import commands
     # bot = commands.Bot(command_prefix='!', intents=intents)
 
-Note that this doesn't enable :attr:`Intents.members` or :attr:`Intents.guild_messages` since they are privileged intents.
+Note that this doesn't enable :attr:`Intents.members` or :attr:`Intents.message_content` since they are privileged intents.
 
 Another example showing a bot that only deals with messages and guild information:
 
@@ -55,7 +55,7 @@ Another example showing a bot that only deals with messages and guild informatio
 .. _privileged_intents:
 
 Privileged Intents
----------------------
+------------------
 
 With the API change requiring bot owners to specify intents, some intents were restricted further and require more manual steps. These intents are called **privileged intents**.
 
@@ -113,17 +113,16 @@ Message Content Intent
 ++++++++++++++++++++++
 
 - Whether you have a message based command system using ext.commands
-- Whether you use the :func:`on_message` event for anything, such as auto-moderation.
-- Whether you track message edits or deletions using :func:`on_message_edit`, :func:`on_message_delete`, :func:`on_raw_message_edit`, :func:`on_raw_message_delete`.
-- Whether you use any reaction related events, such as :func:`on_reaction_add`, :func:`on_reaction_remove`, and :func:`on_reaction_clear`
+- Whether you use the :func:`on_message` event for anything using message content, such as auto-moderation.
+- Whether you use message content in :func:`on_message_edit`, :func:`on_message_delete`, :func:`on_raw_message_edit`, :func:`on_raw_message_delete`.
 
 .. note::
-    This only applies to :attr:`Intents.guild_messages`, not :attr:`Intents.dm_messages`. The bot can still receive message contents in DMs, when mentioned in guild messages, and for its own guild messages.
+    The bot can still receive message contents in DMs, when mentioned in guild messages, and for its own guild messages.
 
 .. _intents_member_cache:
 
 Member Cache
--------------
+------------
 
 Along with intents, Discord now further restricts the ability to cache members and expects bot authors to cache as little as is necessary. However, to properly maintain a cache the :attr:`Intents.members` intent is required in order to track the members who left and properly evict them.
 

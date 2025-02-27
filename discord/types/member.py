@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from typing import TypedDict
+
 from .snowflake import SnowflakeList
 from .user import User
 
@@ -35,18 +36,20 @@ class Nickname(TypedDict):
 class PartialMember(TypedDict):
     roles: SnowflakeList
     joined_at: str
-    deaf: str
-    mute: str
+    deaf: bool
+    mute: bool
 
 
 class Member(PartialMember, total=False):
     avatar: str
+    banner: str
     user: User
     nick: str
     premium_since: str
     pending: bool
     permissions: str
     communication_disabled_until: str
+    flags: int
 
 
 class _OptionalMemberWithUser(PartialMember, total=False):

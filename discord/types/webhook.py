@@ -24,10 +24,14 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from __future__ import annotations
-from typing import Literal, Optional, TypedDict
+
+from typing import Literal
+
+from typing_extensions import NotRequired, TypedDict
+
+from .channel import PartialChannel
 from .snowflake import Snowflake
 from .user import User
-from .channel import PartialChannel
 
 
 class SourceGuild(TypedDict):
@@ -36,36 +40,26 @@ class SourceGuild(TypedDict):
     icon: str
 
 
-class _WebhookOptional(TypedDict, total=False):
-    guild_id: Snowflake
-    user: User
-    token: str
-
-
 WebhookType = Literal[1, 2, 3]
 
 
-class _FollowerWebhookOptional(TypedDict, total=False):
-    source_channel: PartialChannel
-    source_guild: SourceGuild
-
-
-class FollowerWebhook(_FollowerWebhookOptional):
-    channel_id: Snowflake
-    webhook_id: Snowflake
-
-
-class PartialWebhook(_WebhookOptional):
+class PartialWebhook(TypedDict):
+    guild_id: NotRequired[Snowflake]
+    user: NotRequired[User]
+    token: NotRequired[str]
     id: Snowflake
     type: WebhookType
 
 
-class _FullWebhook(TypedDict, total=False):
-    name: Optional[str]
-    avatar: Optional[str]
+class FollowerWebhook(PartialWebhook):
+    source_channel: NotRequired[PartialChannel]
+    source_guild: NotRequired[SourceGuild]
     channel_id: Snowflake
-    application_id: Optional[Snowflake]
+    webhook_id: Snowflake
 
 
-class Webhook(PartialWebhook, _FullWebhook):
-    ...
+class Webhook(PartialWebhook):
+    name: NotRequired[str | None]
+    avatar: NotRequired[str | None]
+    channel_id: NotRequired[Snowflake]
+    application_id: NotRequired[Snowflake | None]

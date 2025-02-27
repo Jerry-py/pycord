@@ -21,8 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+
 import io
-import os
 import subprocess
 
 from .core import CREATE_NO_WINDOW, Filters, Sink, default_filters
@@ -30,17 +30,9 @@ from .errors import OGGSinkError
 
 
 class OGGSink(Sink):
-    """A Sink "stores" all the audio data.
-    
-    Used for .ogg files.
-    
-    .. versionadded:: 2.1
-    
-    Raises
-    ------
-    ClientException
-        An invalid encoding type was specified.
-        Audio may only be formatted after recording is finished.
+    """A special sink for .ogg files.
+
+    .. versionadded:: 2.0
     """
 
     def __init__(self, *, filters=None):
@@ -54,6 +46,15 @@ class OGGSink(Sink):
         self.audio_data = {}
 
     def format_audio(self, audio):
+        """Formats the recorded audio.
+
+        Raises
+        ------
+        OGGSinkError
+            Audio may only be formatted after recording is finished.
+        OGGSinkError
+            Formatting the audio failed.
+        """
         if self.vc.recording:
             raise OGGSinkError(
                 "Audio may only be formatted after recording is finished."
@@ -64,17 +65,23 @@ class OGGSink(Sink):
             "s16le",
             "-ar",
             "48000",
+            "-loglevel",
+            "error",
             "-ac",
             "2",
             "-i",
             "-",
             "-f",
             "ogg",
-            "pipe:1"
+            "pipe:1",
         ]
         try:
-            process = subprocess.Popen(args, creationflags=CREATE_NO_WINDOW,
-                                       stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            process = subprocess.Popen(
+                args,
+                creationflags=CREATE_NO_WINDOW,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
         except FileNotFoundError:
             raise OGGSinkError("ffmpeg was not found.") from None
         except subprocess.SubprocessError as exc:

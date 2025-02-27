@@ -23,21 +23,24 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
-from typing import List, Literal, TypedDict
+from __future__ import annotations
 
-class _EmbedFooterOptional(TypedDict, total=False):
-    icon_url: str
-    proxy_icon_url: str
+from typing import Literal
 
-class EmbedFooter(_EmbedFooterOptional):
+from typing_extensions import NotRequired, TypedDict
+
+
+class EmbedFooter(TypedDict):
+    icon_url: NotRequired[str]
+    proxy_icon_url: NotRequired[str]
     text: str
 
-class _EmbedFieldOptional(TypedDict, total=False):
-    inline: bool
 
-class EmbedField(_EmbedFieldOptional):
+class EmbedField(TypedDict):
+    inline: NotRequired[bool]
     name: str
     value: str
+
 
 class EmbedThumbnail(TypedDict, total=False):
     url: str
@@ -45,11 +48,13 @@ class EmbedThumbnail(TypedDict, total=False):
     height: int
     width: int
 
+
 class EmbedVideo(TypedDict, total=False):
     url: str
     proxy_url: str
     height: int
     width: int
+
 
 class EmbedImage(TypedDict, total=False):
     url: str
@@ -57,9 +62,11 @@ class EmbedImage(TypedDict, total=False):
     height: int
     width: int
 
+
 class EmbedProvider(TypedDict, total=False):
     name: str
     url: str
+
 
 class EmbedAuthor(TypedDict, total=False):
     name: str
@@ -67,7 +74,11 @@ class EmbedAuthor(TypedDict, total=False):
     icon_url: str
     proxy_icon_url: str
 
-EmbedType = Literal['rich', 'image', 'video', 'gifv', 'article', 'link']
+
+EmbedType = Literal[
+    "rich", "image", "video", "gifv", "article", "link", "auto_moderation_message"
+]
+
 
 class Embed(TypedDict, total=False):
     title: str
@@ -82,4 +93,4 @@ class Embed(TypedDict, total=False):
     video: EmbedVideo
     provider: EmbedProvider
     author: EmbedAuthor
-    fields: List[EmbedField]
+    fields: list[EmbedField]

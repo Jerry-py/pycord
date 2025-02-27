@@ -49,7 +49,7 @@ class DPYStandaloneHTMLBuilder(StandaloneHTMLBuilder):
                     "count": count,
                     "genindexentries": genindex,
                 }
-                self.handle_page("genindex-" + key, ctx, "genindex-single.html")
+                self.handle_page(f"genindex-{key}", ctx, "genindex-single.html")
         else:
             self.handle_page("genindex", genindexcontext, "genindex.html")
 

@@ -25,33 +25,20 @@ DEALINGS IN THE SOFTWARE.
 
 from __future__ import annotations
 
-from typing import (
-    List,
-    Tuple,
-    TypedDict,
-    Any,
-    TYPE_CHECKING,
-    Callable,
-    TypeVar,
-    Literal,
-    Optional,
-    overload,
-)
-
 import array
 import ctypes
 import ctypes.util
+import gc
 import logging
 import math
 import os.path
 import struct
 import sys
-import gc
 import threading
-import traceback
 import time
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypedDict, TypeVar
 
-from .errors import DiscordException, InvalidArgument
+from .errors import DiscordException
 from .sinks import RawData
 
 if TYPE_CHECKING:
@@ -84,7 +71,7 @@ __all__ = (
 
 _log = logging.getLogger(__name__)
 
-c_int_ptr   = ctypes.POINTER(ctypes.c_int)
+c_int_ptr = ctypes.POINTER(ctypes.c_int)
 c_int16_ptr = ctypes.POINTER(ctypes.c_int16)
 c_float_ptr = ctypes.POINTER(ctypes.c_float)
 
@@ -102,21 +89,22 @@ class DecoderStruct(ctypes.Structure):
 EncoderStructPtr = ctypes.POINTER(EncoderStruct)
 DecoderStructPtr = ctypes.POINTER(DecoderStruct)
 
-## Some constants from opus_defines.h
+# Some constants from opus_defines.h
+
 # Error codes
 OK = 0
 BAD_ARG = -1
 
 # Encoder CTLs
-APPLICATION_AUDIO       = 2049
-APPLICATION_VOIP        = 2048
-APPLICATION_LOWDELAY    = 2051
+APPLICATION_AUDIO = 2049
+APPLICATION_VOIP = 2048
+APPLICATION_LOWDELAY = 2051
 
-CTL_SET_BITRATE     = 4002
-CTL_SET_BANDWIDTH   = 4008
-CTL_SET_FEC         = 4012
-CTL_SET_PLP         = 4014
-CTL_SET_SIGNAL      = 4024
+CTL_SET_BITRATE = 4002
+CTL_SET_BANDWIDTH = 4008
+CTL_SET_FEC = 4012
+CTL_SET_PLP = 4014
+CTL_SET_SIGNAL = 4024
 
 # Decoder CTLs
 CTL_SET_GAIN = 4034
@@ -137,14 +125,14 @@ signal_ctl: SignalCtl = {
 }
 
 
-def _err_lt(result: int, func: Callable, args: List) -> int:
+def _err_lt(result: int, func: Callable, args: list) -> int:
     if result < OK:
         _log.info("error has happened in %s", func.__name__)
         raise OpusError(result)
     return result
 
 
-def _err_ne(result: T, func: Callable, args: List) -> T:
+def _err_ne(result: T, func: Callable, args: list) -> T:
     ret = args[-1]._obj
     if ret.value != OK:
         _log.info("error has happened in %s", func.__name__)
@@ -157,9 +145,9 @@ def _err_ne(result: T, func: Callable, args: List) -> T:
 # The second one are the types of arguments it takes.
 # The third is the result type.
 # The fourth is the error handler.
-exported_functions: List[Tuple[Any, ...]] = [
+exported_functions: list[tuple[Any, ...]] = [
     # Generic
-    ("opus_get_version_string", None, ctypes.c_char_p, None),
+    ("opus_get_version_string", [], ctypes.c_char_p, None),
     ("opus_strerror", [ctypes.c_int], ctypes.c_char_p, None),
     # Encoder functions
     ("opus_encoder_get_size", [ctypes.c_int], ctypes.c_int, None),
@@ -181,7 +169,7 @@ exported_functions: List[Tuple[Any, ...]] = [
         ctypes.c_int32,
         _err_lt,
     ),
-    ("opus_encoder_ctl", None, ctypes.c_int32, _err_lt),
+    ("opus_encoder_ctl", [EncoderStructPtr, ctypes.c_int], ctypes.c_int32, _err_lt),
     ("opus_encoder_destroy", [EncoderStructPtr], None, None),
     # Decoder functions
     ("opus_decoder_get_size", [ctypes.c_int], ctypes.c_int, None),
@@ -217,7 +205,7 @@ exported_functions: List[Tuple[Any, ...]] = [
         ctypes.c_int,
         _err_lt,
     ),
-    ("opus_decoder_ctl", None, ctypes.c_int32, _err_lt),
+    ("opus_decoder_ctl", [DecoderStructPtr, ctypes.c_int], ctypes.c_int32, _err_lt),
     ("opus_decoder_destroy", [DecoderStructPtr], None, None),
     (
         "opus_decoder_get_nb_samples",
@@ -358,8 +346,6 @@ class OpusError(DiscordException):
 class OpusNotLoaded(DiscordException):
     """An exception that is thrown for when libopus is not loaded."""
 
-    pass
-
 
 class _OpusStruct:
     SAMPLING_RATE = 48000
@@ -411,7 +397,8 @@ class Encoder(_OpusStruct):
     def set_bandwidth(self, req: BAND_CTL) -> None:
         if req not in band_ctl:
             raise KeyError(
-                f'{req!r} is not a valid bandwidth setting. Try one of: {",".join(band_ctl)}'
+                f"{req!r} is not a valid bandwidth setting. Try one of:"
+                f" {','.join(band_ctl)}"
             )
 
         k = band_ctl[req]
@@ -420,7 +407,8 @@ class Encoder(_OpusStruct):
     def set_signal_type(self, req: SIGNAL_CTL) -> None:
         if req not in signal_ctl:
             raise KeyError(
-                f'{req!r} is not a valid bandwidth setting. Try one of: {",".join(signal_ctl)}'
+                f"{req!r} is not a valid bandwidth setting. Try one of:"
+                f" {','.join(signal_ctl)}"
             )
 
         k = signal_ctl[req]
@@ -551,13 +539,16 @@ class DecodeManager(threading.Thread, _OpusStruct):
             try:
                 data = self.decode_queue.pop(0)
             except IndexError:
+                time.sleep(0.001)
                 continue
 
             try:
                 if data.decrypted_data is None:
                     continue
                 else:
-                    data.decoded_data = self.get_decoder(data.ssrc).decode(data.decrypted_data)
+                    data.decoded_data = self.get_decoder(data.ssrc).decode(
+                        data.decrypted_data
+                    )
             except OpusError:
                 print("Error occurred while decoding opus frame.")
                 continue
@@ -571,17 +562,14 @@ class DecodeManager(threading.Thread, _OpusStruct):
             gc.collect()
             print("Decoder Process Killed")
         self._end_thread.set()
-    
 
     def get_decoder(self, ssrc):
         d = self.decoder.get(ssrc)
-        if d is None:
-            self.decoder[ssrc] = Decoder()
-            return self.decoder[ssrc]
-        else:
+        if d is not None:
             return d
+        self.decoder[ssrc] = Decoder()
+        return self.decoder[ssrc]
 
     @property
     def decoding(self):
         return bool(self.decode_queue)
-
